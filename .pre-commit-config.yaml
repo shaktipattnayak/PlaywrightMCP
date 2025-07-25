@@ -1,0 +1,10 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pre-commit/mirrors-pylint
+    rev: v2.17.4
+    hooks:
+      - id: pylint
+        args: ["--fail-under=9.0"] 

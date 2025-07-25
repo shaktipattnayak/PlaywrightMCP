@@ -1,0 +1,61 @@
+name: Python Playwright Tests
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps
+          pip install pre-commit
+      - name: Run Black (format check)
+        run: black --check .
+      - name: Run Pylint (lint check)
+        run: pylint --fail-under=9.0 $(git ls-files '*.py')
+      - name: Install pre-commit hooks
+        run: |
+          pre-commit install
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps
+      - name: Run tests
+        run: pytest --headed --browser chromium --disable-warnings -v 
+  test-shard-1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker image
+        run: docker build -t orangehrm-tests .
+      - name: Run tests (shard 1)
+        run: |
+          docker run -v ${{ github.workspace }}/reports:/app/reports orangehrm-tests pytest tests/test_login.py --html=reports/report_login.html
+
+  # Repeat for other shards/files...
+
+  aggregate-reports:
+    runs-on: ubuntu-latest
+    needs: [test-shard-1]
+    steps:
+      - name: Aggregate HTML or Allure reports
+        run: |
+          # Example for Allure
+          allure generate --clean reports/allure-results
+          allure open reports/allure-report

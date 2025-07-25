@@ -1,0 +1,7 @@
+pytest
+pytest-playwright
+python-dotenv
+playwright
+pytest-bdd
+pylint
+black 
